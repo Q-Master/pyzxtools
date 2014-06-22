@@ -4,15 +4,16 @@
 # Author: Vladimir Berezenko <qmaster@rambler.ru>
 from argparse import ArgumentParser
 from pyZXTools import tap
+from pyZXTools.zxfile import ZXFile
 
 
 
 if __name__ == "__main__":
     EXTENSIONS = {
-        "B" : tap.TAP_BLOCK_TYPE_PROGRAMM, "b" : tap.TAP_BLOCK_TYPE_PROGRAMM, 
-        "C" : tap.TAP_BLOCK_TYPE_CODE, "c" : tap.TAP_BLOCK_TYPE_CODE, 
-        "DC" : tap.TAP_BLOCK_TYPE_CHARACTER_ARRAY, "dc" : tap.TAP_BLOCK_TYPE_CHARACTER_ARRAY, 
-        "DN" : tap.TAP_BLOCK_TYPE_NUMBER_ARRAY, "dn" : tap.TAP_BLOCK_TYPE_NUMBER_ARRAY, 
+        "B" : ZXFile.TYPE_PROGRAMM, "b" : ZXFile.TYPE_PROGRAMM, 
+        "C" : ZXFile.TYPE_CODE, "c" : ZXFile.TYPE_CODE, 
+        "DC" : ZXFile.TYPE_CHARACTER_ARRAY, "dc" : ZXFile.TYPE_CHARACTER_ARRAY, 
+        "DN" : ZXFile.TYPE_NUMBER_ARRAY, "dn" : ZXFile.TYPE_NUMBER_ARRAY, 
     }
     def list_files(args):
         tapO = tap.TAP(args.infile)
