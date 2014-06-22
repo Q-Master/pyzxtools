@@ -36,7 +36,7 @@ class Hobeta(object):
         if crc != crcf:
             raise IOError("Wrong CRC in file")
         filename, extension, start, length, seclen = struct.unpack("<8scHHH", img_data[:14])
-        self.img_data = TRDfile(filename, extension, start, length, seclen, img_data[17:])
+        self.img_data = TRDfile(filename, extension, start, seclen, img_data[17:])
     
     
     def append_file(self, filename, basic = False, autostart = 0):
@@ -60,7 +60,7 @@ class Hobeta(object):
             raise IOError("File size too big")
         sector_count = int(round(length/256.0+0.5))
         
-        self.img_data = TRDfile(name, extension, length if basic else 0, length, sector_count, filedata)
+        self.img_data = TRDfile(name, extension, length if basic else 0, sector_count, filedata)
         self.modified = True
     
     

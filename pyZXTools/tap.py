@@ -4,25 +4,17 @@
 # Author: Vladimir Berezenko <qmaster@rambler.ru>
 
 import sys, os, stat, struct
-
-TAP_BLOCK_TYPE_PROGRAMM=0
-TAP_BLOCK_TYPE_NUMBER_ARRAY=1
-TAP_BLOCK_TYPE_CHARACTER_ARRAY=2
-TAP_BLOCK_TYPE_CODE=3
+from zxfile import ZXFile
 
 
-class TAPfile(object):
+class TAPfile(ZXFile):
     def __init__(self, filename, filetype, start_address, param2, filedata):
-        self.filename = filename.ljust(10, " ")[:10]
-        self.filetype = filetype
-        self.start_address = start_address
+        super(TAPfile,self).__init__(filename, filetype, start_address, filedata)
         self.param2 = param2
-        self.filedata = filedata
-        self.length = len(filedata)
     
     
     def _header(self):
-        return struct.pack("<c10sHHH", chr(self.filetype), self.filename, self.length, self.start_address, self.param2)
+        return struct.pack("<c10sHHH", chr(self.filetype), self.filename(), self.length, self.start_address, self.param2)
     
     
     def _crc(self, data, code):
@@ -41,10 +33,14 @@ class TAPfile(object):
         out += self.filedata
         out += self._crc(self.filedata, True)
         return out
+    
+    
+    def filename(self):
+        return self.filename.ljust(10, " ")[:10]
 
 
 class TAP(object):
-    TYPES = {TAP_BLOCK_TYPE_PROGRAMM : "B", TAP_BLOCK_TYPE_CODE : "C", TAP_BLOCK_TYPE_CHARACTER_ARRAY : "DC", TAP_BLOCK_TYPE_NUMBER_ARRAY : "DN"}
+    TYPES = {ZXFile.TYPE_PROGRAMM : "B", ZXFile.TYPE_CODE : "C", ZXFile.TYPE_CHARACTER_ARRAY : "DC", ZXFile.TYPE_NUMBER_ARRAY : "DN"}
     def __init__(self, filename = None):
         self.img_filename = filename
         self.modified = False
@@ -93,7 +89,7 @@ class TAP(object):
         print "Name\t\tType\tStart\tSize\n---------------------------------------------"
         
         for zxfile in self.filelist:
-            print "%.10s\t%s\t%i\t%i" % (zxfile.filename, TAP.TYPES[zxfile.filetype], zxfile.start_address, zxfile.length)
+            print "%.10s\t%s\t%i\t%i" % (zxfile.filename(), TAP.TYPES[zxfile.filetype], zxfile.start_address, zxfile.length)
     
     
     def append_file(self, filename, file_type, start_address):
@@ -105,9 +101,9 @@ class TAP(object):
         
         filename, _, _ = filename.rpartition(".")
         
-        if file_type == TAP_BLOCK_TYPE_PROGRAMM:
+        if file_type == ZXFile.TYPE_PROGRAMM:
             param2 = len(filedata)
-        elif file_type == TAP_BLOCK_TYPE_CODE:
+        elif file_type == ZXFile.TYPE_CODE:
             param2 = 32768
         self.filelist.append(TAPfile(filename, file_type, start_address, param2, filedata))
         self.modified = True
@@ -119,7 +115,7 @@ class TAP(object):
         filename = filename.ljust(10, " ")
         
         for zx_file in self.filelist:
-            if zx_file.filename == filename and zx_file.filetype == file_type:
+            if zx_file.filename() == filename and zx_file.filetype == file_type:
                 outfile = open(filename.strip()+".%s" % TAP.TYPES[file_type], 'wb+')
                 outfile.write(zx_file.filedata)
                 outfile.close()

@@ -6,58 +6,39 @@
 
 
 import sys, os, stat, struct
-
+from zxfile import ZXFile
 
 TYPE_NONE = 0
 TYPE_TRD = 1
 TYPE_SCL = 2
 
 
-class TRDfile(object):
-    filename = ""
-    extension = ""
-    start_address = 0
-    length = 0
-    sector_count = 0
-    start_sector = 0
-    start_track = 0
-    filedata = ""
-    
-    def __init__(self, filename, extension, start_address, length, sector_count, filedata, start_sector = 0, start_track = 0):
-        self.filename = filename.ljust(8, " ")[:8]
+class TRDfile(ZXFile):
+    def __init__(self, filename, extension, start_address, sector_count, filedata, start_sector = 0, start_track = 0):
+        super(TRDfile,self).__init__(filename, ZXFile.TYPE_PROGRAMM if extension == "B" else ZXFile.TYPE_CODE, start_address, filedata)
         self.extension = extension
-        self.start_address = int(start_address)
-        self.length = int(length)
         self.sector_count = int(sector_count)
         if len(filedata)%256:
             filedata_pad = 256-len(filedata)%256
             filedata += "\x00"*int(filedata_pad)
-        self.filedata = filedata
         self.start_sector = start_sector
         self.start_track = start_track
     
     
     def pack(self, zxtype):
         if zxtype == TYPE_TRD:
-            return struct.pack("<8scHHccc", self.filename, self.extension, self.start_address, self.length, chr(self.sector_count), chr(self.start_sector), chr(self.start_track))
+            return struct.pack("<8scHHccc", self.filename(), self.extension, self.start_address, self.length, chr(self.sector_count), chr(self.start_sector), chr(self.start_track))
         elif zxtype == TYPE_SCL:
-            return struct.pack("<8scHHc", self.filename, self.extension, self.start_address, self.length, chr(self.sector_count))
+            return struct.pack("<8scHHc", self.filename(), self.extension, self.start_address, self.length, chr(self.sector_count))
         else:
             raise AttributeError("Wrong file type")
+    
+    
+    def filename(self):
+        return self.filename.ljust(8, " ")[:8]
 
 
 class TRD(object):
-    img_type = TYPE_NONE
-    img_filename = None
-    img_data = None
-    filelist = []
-    fies_amount = 0
-    last_track = 1
-    last_sector = 0
-    free_sector = 0
-    modified = False
-    disc_name = ""
-    
     def __init__(self, filename = None):
         self.img_filename = filename
         self.img_data = None
@@ -95,20 +76,6 @@ class TRD(object):
         self._scan_files()
     
     
-    #def create(self, img_type):
-        #if img_type == self.TYPE_TRD:
-            #self.img_data = ['\x00'] * 0xa0000
-            #self.img_data[0x8e2] = 0x01
-            #self.img_data[0x8e3] = 0x16
-            #self.img_data[0x8e5] = 0xf0
-            #self.img_data[0x8e6] = 0x09
-            #self.img_data[0x8e7] = 0x10
-        #elif img_type == self.TYPE_SCL:
-            #self.img_data = ['S','I','N','C','L','A','I','R','\x0']
-        #else:
-            #raise AttributeError("Wrong image type")
-    
-    
     def _scan_files(self):
         if self.img_type == TYPE_NONE:
             raise IOError("No file opened")
@@ -121,7 +88,7 @@ class TRD(object):
                 sector_count = ord(sector_count)
                 filedata = self.img_data[data_start:data_start+sector_count*256]
                 data_start += sector_count*256
-                self.filelist.append(TRDfile(filename, extension, start, length, sector_count, filedata))
+                self.filelist.append(TRDfile(filename, extension, start, sector_count, filedata))
                 idx += 14
         elif self.img_type == TYPE_TRD:
             i = 0
@@ -133,7 +100,7 @@ class TRD(object):
                 start_track = ord(start_track)
                 data_start = start_track*4096+start_sector*256
                 filedata = self.img_data[data_start:data_start+sector_count*256]
-                self.filelist.append(TRDfile(filename, extension, start, length, sector_count, filedata, start_sector, start_track))
+                self.filelist.append(TRDfile(filename, extension, start, sector_count, filedata, start_sector, start_track))
                 idx += 16
                 i += 1
     
@@ -148,9 +115,9 @@ class TRD(object):
             
         for zxfile in self.filelist:
             if self.img_type == TYPE_TRD:
-                print "%.8s\t%c\t%i\t%i\t%i\t%i\t%i" % (zxfile.filename, zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count, zxfile.start_track, zxfile.start_sector)
+                print "%.8s\t%c\t%i\t%i\t%i\t%i\t%i" % (zxfile.filename(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count, zxfile.start_track, zxfile.start_sector)
             else:
-                print "%.8s\t%c\t%i\t%i\t%i" % (zxfile.filename, zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count)
+                print "%.8s\t%c\t%i\t%i\t%i" % (zxfile.filename(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count)
     
     
     def append_file(self, filename, basic = False, autostart = 0):
@@ -178,7 +145,7 @@ class TRD(object):
         
         if self.free_sector and self.free_sector < sector_count:
             raise IOError("No free space")
-        file = TRDfile(name, extension, length if basic else 0, length, sector_count, filedata)
+        file = TRDfile(name, extension, length if basic else 0, sector_count, filedata)
         self.fies_amount += 1
         
         if self.img_type == TYPE_SCL:
@@ -199,7 +166,7 @@ class TRD(object):
         if not extension:
             extension = 'C'
         for zx_file in self.filelist:
-            if zx_file.filename == name and zx_file.extension == extension:
+            if zx_file.filename() == name and zx_file.extension == extension:
                 outfile = open(filename, 'wb+')
                 outfile.write(zx_file.filedata)
                 outfile.close()
