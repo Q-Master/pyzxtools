@@ -1,0 +1,11 @@
+
+# trd
+regex/\.[tT]([rR][dD])$
+	Open=%cd %p/trd://
+	View=%view{ascii} mctrd list %f
+
+# scl
+regex/\.[sS]([cC][lL])$
+	Open=%cd %p/trd://
+	View=%view{ascii} mctrd list %f
+

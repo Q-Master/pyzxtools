@@ -30,7 +30,6 @@ if __name__ == "__main__":
             ext = EXTENSIONS[extension]
         except KeyError:
             ext = EXTENSIONS["C"]
-        
         tapO.append_file(args.filename, ext, args.start_address)
         tapO.close()
     
@@ -71,7 +70,6 @@ if __name__ == "__main__":
     create_parser = subparsers.add_parser("create", help="create new image file")
     create_parser.add_argument('outfile', nargs='?', type=str, help="image file name")
     create_parser.set_defaults(func=create_img)
-    
     
     args = argparser.parse_args()
     args.func(args)

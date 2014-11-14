@@ -8,7 +8,6 @@ from argparse import ArgumentParser
 from pyZXTools import trdos
 
 if __name__ == "__main__":
-    
     def list_files(args):
         trd = trdos.TRD(args.infile)
         trd.open()
@@ -67,7 +66,6 @@ if __name__ == "__main__":
     create_parser.add_argument('-n', '--name', type=str, help="disc name if trd", default="")
     create_parser.add_argument('-t', '--type', type=str, choices=['trd', 'scl'], help="image type")
     create_parser.set_defaults(func=create_img)
-    
     
     args = argparser.parse_args()
     args.func(args)

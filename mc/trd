@@ -1,0 +1,59 @@
+#!/bin/bash
+
+MCTRD=mctrd
+
+umask 077
+
+cmd="$1"
+
+trd_list()
+{
+    # Считываем построчно
+    $MCTRD list $1 | while read S; do
+	name="${S:0:8}"
+	#
+	A=( ${S:8} )
+	seclen=${A[3]}
+	sign=${A[1]}
+	type=${A[0]}
+	
+	if [[ $seclen -lt 0 ]] ; then
+	    seclen=$(( 256 + $seclen  ))
+	fi
+	
+	seclen=$(( seclen * 256 ))
+	
+	# Проверка на заголовок
+	if [[ "$S" != "---------------------------" ]] ; then
+	    if [[ "$sign" != "Start" ]] ; then
+		echo "-rw-rw-rw- 1 speccy speccy "$seclen" Jan 01 1980 "$name"."$type
+	    fi
+	fi
+    done
+}
+
+trd_copyout()
+{
+   _pwd=`pwd`
+    cp -f "$1" "$MC_TMPDIR"/
+    cd $MC_TMPDIR
+    $MCTRD pop "$2" `basename "$1"`
+    mv -f "$2" `basename "$3"`
+    rm -rf `basename "$1"`
+    cd $_pwd
+}
+
+trd_copyin()
+{
+    _pwd=`pwd`
+    $MCTRD add "$2" "$1"
+    cd $_pwd
+}
+
+case "$cmd" in
+  list) trd_list "$2" ;;
+  copyout) trd_copyout "$2" "$3" "$4" ;;
+  copyin) trd_copyin "$2" "$3" "$4" ;;
+  *) exit 1 ;;
+esac
+exit 0
