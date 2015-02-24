@@ -27,14 +27,14 @@ class TRDfile(ZXFile):
     
     def pack(self, zxtype):
         if zxtype == TYPE_TRD:
-            return struct.pack("<8scHHccc", self.filename(), self.extension, self.start_address, self.length, chr(self.sector_count), chr(self.start_sector), chr(self.start_track))
+            return struct.pack("<8scHHccc", self.fname(), self.extension, self.start_address, self.length, chr(self.sector_count), chr(self.start_sector), chr(self.start_track))
         elif zxtype == TYPE_SCL:
-            return struct.pack("<8scHHc", self.filename(), self.extension, self.start_address, self.length, chr(self.sector_count))
+            return struct.pack("<8scHHc", self.fname(), self.extension, self.start_address, self.length, chr(self.sector_count))
         else:
             raise AttributeError("Wrong file type")
     
     
-    def filename(self):
+    def fname(self):
         return self.filename.ljust(8, " ")[:8]
 
 
@@ -115,9 +115,9 @@ class TRD(object):
             
         for zxfile in self.filelist:
             if self.img_type == TYPE_TRD:
-                print "%.8s\t%c\t%i\t%i\t%i\t%i\t%i" % (zxfile.filename(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count, zxfile.start_track, zxfile.start_sector)
+                print "%.8s\t%c\t%i\t%i\t%i\t%i\t%i" % (zxfile.fname(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count, zxfile.start_track, zxfile.start_sector)
             else:
-                print "%.8s\t%c\t%i\t%i\t%i" % (zxfile.filename(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count)
+                print "%.8s\t%c\t%i\t%i\t%i" % (zxfile.fname(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count)
     
     
     def append_file(self, filename, basic = False, autostart = 0):
@@ -166,7 +166,7 @@ class TRD(object):
         if not extension:
             extension = 'C'
         for zx_file in self.filelist:
-            if zx_file.filename() == name and zx_file.extension == extension:
+            if zx_file.fname() == name and zx_file.extension == extension:
                 outfile = open(filename, 'wb+')
                 outfile.write(zx_file.filedata)
                 outfile.close()
