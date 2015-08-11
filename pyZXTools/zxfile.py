@@ -10,12 +10,12 @@ class ZXFile(object):
     TYPE_CHARACTER_ARRAY=2
     TYPE_CODE=3
     
-    def __init__(self, filename, filetype, start_address, filedata):
+    def __init__(self, filename, filetype, start_address, length, filedata):
         self.filedata = filedata
         self.filename = filename
         self.filetype = filetype
         self.start_address = start_address
-        self.length = len(filedata)
+        self.length = length
     
     
     def pack(self):

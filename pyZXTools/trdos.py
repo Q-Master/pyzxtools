@@ -14,8 +14,8 @@ TYPE_SCL = 2
 
 
 class TRDfile(ZXFile):
-    def __init__(self, filename, extension, start_address, sector_count, filedata, start_sector = 0, start_track = 0):
-        super(TRDfile,self).__init__(filename, ZXFile.TYPE_PROGRAMM if extension == "B" else ZXFile.TYPE_CODE, start_address, filedata)
+    def __init__(self, filename, extension, start_address, length, sector_count, filedata, start_sector = 0, start_track = 0):
+        super(TRDfile,self).__init__(filename, ZXFile.TYPE_PROGRAMM if extension == "B" else ZXFile.TYPE_CODE, start_address, length, filedata)
         self.extension = extension
         self.sector_count = int(sector_count)
         if len(filedata)%256:
@@ -88,7 +88,7 @@ class TRD(object):
                 sector_count = ord(sector_count)
                 filedata = self.img_data[data_start:data_start+sector_count*256]
                 data_start += sector_count*256
-                self.filelist.append(TRDfile(filename, extension, start, sector_count, filedata))
+                self.filelist.append(TRDfile(filename, extension, start, length, sector_count, filedata))
                 idx += 14
         elif self.img_type == TYPE_TRD:
             i = 0
@@ -100,7 +100,7 @@ class TRD(object):
                 start_track = ord(start_track)
                 data_start = start_track*4096+start_sector*256
                 filedata = self.img_data[data_start:data_start+sector_count*256]
-                self.filelist.append(TRDfile(filename, extension, start, sector_count, filedata, start_sector, start_track))
+                self.filelist.append(TRDfile(filename, extension, start, length, sector_count, filedata, start_sector, start_track))
                 idx += 16
                 i += 1
     
@@ -120,13 +120,17 @@ class TRD(object):
                 print "%.8s\t%c\t%i\t%i\t%i" % (zxfile.fname(), zxfile.extension, zxfile.start_address, zxfile.length, zxfile.sector_count)
     
     
-    def append_file(self, filename, basic = False, autostart = 0):
+    def append_file(self, filename, start = 0, length = -1, basic = False, autostart = 0):
         if self.img_type == TYPE_NONE:
             raise IOError("No file opened")
         if self.fies_amount > 127:
             raise IOError("Too many files")
         zxfile = open(filename, 'rb')
-        filedata = zxfile.read()
+        if length<0:
+            filedata = zxfile.read()
+        else:
+            filedata = zxfile.read(length)
+            filedata = filedata + "\x00" * (length - len(filedata))
         zxfile.close()
         
         name, extension = filename.rsplit(".")
@@ -141,11 +145,11 @@ class TRD(object):
         
         if length > 0xff00:
             raise IOError("File size too big")
-        sector_count = int(round(length/256.0+0.5))
+        sector_count = (length/256) if length%256==0 else (length/256+1)
         
         if self.free_sector and self.free_sector < sector_count:
             raise IOError("No free space")
-        file = TRDfile(name, extension, length if basic else 0, sector_count, filedata)
+        file = TRDfile(name, extension, length if basic else start, length, sector_count, filedata)
         self.fies_amount += 1
         
         if self.img_type == TYPE_SCL:
@@ -155,8 +159,9 @@ class TRD(object):
             file.start_sector = self.last_sector
             file.start_track = self.last_track
             self.filelist.append(file)
-            self.last_track = self.last_track + sector_count/16
-            self.last_sector = sector_count%16
+            sn = self.last_sector + sector_count
+            self.last_sector = sn%16
+            self.last_track = self.last_track + sn/16
         self.modified = True
     
     

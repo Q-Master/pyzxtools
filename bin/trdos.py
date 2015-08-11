@@ -18,7 +18,7 @@ if __name__ == "__main__":
     def add_file(args):
         trd = trdos.TRD(args.infile)
         trd.open()
-        trd.append_file(args.filename, args.basic, args.autostart)
+        trd.append_file(args.filename, args.start, args.length, args.basic, args.autostart)
         trd.close()
     
     
@@ -34,6 +34,7 @@ if __name__ == "__main__":
         if args.type == 'trd':
             trd.img_type = trdos.TYPE_TRD
             trd.disc_name = args.name.ljust(11, " ")
+            trd.free_sector = 159*16
         elif args.type == 'scl':
             trd.img_type = trdos.TYPE_SCL
         else:
@@ -52,6 +53,8 @@ if __name__ == "__main__":
     add_parser = subparsers.add_parser("add", help="put file into image")
     add_parser.add_argument('infile', nargs='?', type=str, help="image file name")
     add_parser.add_argument('filename', nargs='?', type=str, help="filename in format file.ext to add to image")
+    add_parser.add_argument('-s', '--start', type=int, default=0, help="set start address")
+    add_parser.add_argument('-l', '--length', type=int, default=-1, help="force file length")
     add_parser.add_argument('-b', '--basic', action='store_true', help="file to append is a basic file")
     add_parser.add_argument('-a', '--autostart', type=int, default=0, help="autostart line for basic file")
     add_parser.set_defaults(func=add_file)
